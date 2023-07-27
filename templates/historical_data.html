@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Historical Analysis{% endblock %}
+{% block content %}
+<h1>Historical Price Analysis</h1>
+
+<input type="hidden" id="stock_data_id" value="{{ stock_data }}">
+
+{% include 'form.html' %}
+<div class="center-container">
+    <div class="stock-data-container">
+        <div class="stock-data-label">Stock Name:</div>
+        <div>{{ stock_data[0].symbol }}</div>
+        <div class="stock-data-label">Minimum:</div>
+        <div>{{ stock_data[0].min }}</div>
+        <div class="stock-data-label">Maximum:</div>
+        <div>{{ stock_data[0].max }}</div>
+        <div class="stock-data-label">Average:</div>
+        <div>{{ stock_data[0].average }}</div>
+    </div>
+</div>
+
+<div style="border-radius:10px; padding: 5px; border:solid; border-color: black; margin-top: 5px;">
+    <h4>Stock Records</h4>
+    <div class="ct-chart .ct-perfect-fifth"></div>
+</div>
+<div style="border-radius:10px; padding: 5px; border:solid; border-color: black; margin-top: 5px;">
+    <h4>Stock RSI</h4>
+    <div class="ct-chart2 .ct-perfect-fifth"></div>
+</div>
+<div style="border-radius:10px; padding: 5px; border:solid; border-color: black; margin-top: 5px;">
+    <h4>Stock Moving Average</h4>
+    <div class="ct-chart3 .ct-perfect-fifth"></div>
+</div>
+
+<!--<div class="footer" style="margin-top: 10px;">-->
+<!--    Previously Analysed Stocks : {% for i in previous_stocks %} <div>{{i}}</div>-->
+<!--    {% endfor %}-->
+<!--</div>-->
+{% endblock %}
+{% block script %}
+<script>
+    var stock_data = document.querySelector('#stock_data_id').value;
+    stock_data = stock_data.replace(/'/g, '"');
+    stock_data = JSON.parse(stock_data);
+    var options = {
+        showPoint: false,
+        lineSmooth: false,
+        axisX: {
+            labelInterpolationFnc: function(value, index) {
+              return index % 10 === 0 ? value : null;
+            }
+        }
+    };
+    var data = {
+        labels: stock_data[0].labels,
+        series: [stock_data[0].closing]
+    };
+    new Chartist.Line('.ct-chart', data, options);
+
+    var x = [], y = [];
+    stock_data[0].rsi.forEach(element => {
+        x.push(70);
+        y.push(30);
+    }); 
+
+    var data2 = {
+        labels: stock_data[0].labels,
+        series: [x, y, stock_data[0].rsi]
+    };
+    new Chartist.Line('.ct-chart2', data2, options);
+
+    var data3 = {
+        labels: stock_data[0].labels,
+        series: [stock_data[0].ma]
+    };
+    new Chartist.Line('.ct-chart3', data3, options);
+</script>
+{% endblock %}

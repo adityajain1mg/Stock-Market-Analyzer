@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Compare Stocks{% endblock %}
+{% block content %}
+<h1>Historical Price Analysis</h1>
+
+    <input type="hidden" id="stock_data_id" value="{{ stock_data }}">
+
+    <div class="center-container">
+        <div class="stock-data-container">
+            <div class="stock-data-label">Stock Name:</div>
+            <div>{{ stock_data[0].symbol }}</div>
+            <div class="stock-data-label">Minimum:</div>
+            <div>{{ stock_data[0].min }}</div>
+            <div class="stock-data-label">Maximum:</div>
+            <div>{{ stock_data[0].max }}</div>
+            <div class="stock-data-label">Average:</div>
+            <div>{{ stock_data[0].average }}</div>
+        </div>
+
+        <div class="stock-data-container">
+            <div class="stock-data-label">Stock Name:</div>
+            <div>{{ stock_data[1].symbol }}</div>
+            <div class="stock-data-label">Minimum:</div>
+            <div>{{ stock_data[1].min }}</div>
+            <div class="stock-data-label">Maximum:</div>
+            <div>{{ stock_data[1].max }}</div>
+            <div class="stock-data-label">Average:</div>
+            <div>{{ stock_data[1].average }}</div>
+        </div>
+    </div>
+
+    {% include 'form.html' %}
+
+    <div style="border-radius:10px; padding: 5px; border:solid; border-color: black; margin-top: 5px;">
+        <h4>Comparison</h4>
+        <div class="ct-chart .ct-perfect-fifth"></div>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    var stock_data = document.querySelector('#stock_data_id').value;
+    stock_data = stock_data.replace(/'/g, '"');
+    stock_data = JSON.parse(stock_data);
+    var options = {
+        showPoint: false,
+        lineSmooth: false,
+        axisX: {
+            labelInterpolationFnc: function(value, index) {
+              return index % 10 === 0 ? value : null;
+            }
+        }
+    };
+    var data = {
+        labels: stock_data[0].labels,
+        series: [stock_data[0].closing, stock_data[1].closing]
+    };
+    new Chartist.Line('.ct-chart', data, options);
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+        <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+        <title>{% block title %}{% endblock %}</title>
+         <style>
+            body {
+                text-align: center;
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+
+            form {
+                margin-top: 20px;
+            }
+
+            button {
+                padding: 6px;
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                margin-bottom: 10px;
+                background-color: #007BFF;
+                color: #fff;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Stock Market Analyser</h1>
+        <div class="button-container">
+            <a href="/v1/analyse/historical-analysis"><button type="submit">Stock Historical Data</button></a>
+            <a href="/v1/analyse/compare"><button type="submit">Compare Stocks</button></a>
+            <a href="/v1/analyse/real-time"><button type="submit">Real-time Data</button></a>
+        </div>
+    </body>
+</html>
