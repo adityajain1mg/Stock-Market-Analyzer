@@ -1,34 +1,75 @@
-{% extends "base.html" %}
-{% block title %}Compare Stocks{% endblock %}
-{% block content %}
-<h1>Historical Price Analysis</h1>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+    <title>Compare Stocks</title>
+    <style>
+        .ct-line {
+            stroke-width: 2px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        button {
+            padding: 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stock-data-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            width: 300px;
+        }
+
+        .stock-data-container div {
+            margin-bottom: 5px;
+        }
+
+        .stock-data-label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body style="text-align: center">
+
+    <h1>Compare Stocks</h1>
 
     <input type="hidden" id="stock_data_id" value="{{ stock_data }}">
-    <form method="POST">
-            <label for="stock_name_1">Enter Stock Symbol</label>
-            <input type="text" name="stock_name_1" id="stock_name_1" required>
 
-            <label for="stock_name_2">Enter Stock Symbol</label>
-            <input type="text" name="stock_name_2" id="stock_name_2" required>
-
-            <label for="duration_dropdown">Select Duration</label>
-            <select name="duration_dropdown" id="duration_dropdown">
-                <option value="1M" {% if preferences[1] == '1M' %} selected {% endif %}> 1M</option>
-                <option value="3M" {% if preferences[1] == '3M' %} selected {% endif %}> 3M</option>
-                <option value="6M" {% if preferences[1] == '6M' %} selected {% endif %}> 6M</option>
-                <option value="1Y" {% if preferences[1] == '1Y' %} selected {% endif %}> 1Y</option>
-            </select>
-
-            <label for="candle_size_dropdown">Select Candle Size</label>
-            <select name="candle_size_dropdown" id="candle_size_dropdown">
-                <option value="5min" {% if preferences[0] == '5min' %} selected {% endif %}> 5min</option>
-                <option value="15min" {% if preferences[0] == '15min' %} selected {% endif %}> 15min</option>
-                <option value="1D" {% if preferences[0] == '1D' %} selected {% endif %}> 1D</option>
-                <option value="1M" {% if preferences[0] == '1M' %} selected {% endif %}> 1M</option>
-            </select>
-
-            <button type="submit">Submit</button>
-        </form>
     <div class="center-container">
         <div class="stock-data-container">
             <div class="stock-data-label">Stock Name:</div>
@@ -57,26 +98,26 @@
         <h4>Comparison</h4>
         <div class="ct-chart .ct-perfect-fifth"></div>
     </div>
-{% endblock %}
-
-{% block script %}
-<script>
-    var stock_data = document.querySelector('#stock_data_id').value;
-    stock_data = stock_data.replace(/'/g, '"');
-    stock_data = JSON.parse(stock_data);
-    var options = {
-        showPoint: false,
-        lineSmooth: false,
-        axisX: {
-            labelInterpolationFnc: function(value, index) {
-              return index % 10 === 0 ? value : null;
+    <script>
+        var stock_data = document.querySelector('#stock_data_id').value;
+        stock_data = stock_data.replace(/'/g, '"');
+        stock_data = JSON.parse(stock_data);
+        var options = {
+            showPoint: false,
+            lineSmooth: false,
+            axisX: {
+                labelInterpolationFnc: function (value, index) {
+                    return index % 10 === 0 ? value : null;
+                }
             }
-        }
-    };
-    var data = {
-        labels: stock_data[0].labels,
-        series: [stock_data[0].closing, stock_data[1].closing]
-    };
-    new Chartist.Line('.ct-chart', data, options);
-</script>
-{% endblock %}
+        };
+        var data = {
+            labels: stock_data[0].labels,
+            series: [stock_data[0].closing, stock_data[1].closing]
+        };
+        new Chartist.Line('.ct-chart', data, options);
+    </script>
+
+</body>
+
+</html>
