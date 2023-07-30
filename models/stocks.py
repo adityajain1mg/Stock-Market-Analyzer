@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
+@dataclass
 class Stock: 
-    stock: str
+    symbol: str
     date: str
     close: list(float)
     ma: list(float)

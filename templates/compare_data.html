@@ -112,8 +112,8 @@
             }
         };
         var data = {
-            labels: stock_data[0].labels,
-            series: [stock_data[0].closing, stock_data[1].closing]
+            labels: stock_data[0].date,
+            series: [stock_data[0].close, stock_data[1].close]
         };
         new Chartist.Line('.ct-chart', data, options);
     </script>

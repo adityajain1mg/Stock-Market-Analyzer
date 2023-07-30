@@ -15,16 +15,13 @@ class StockManager:
             template (html): html page to be rendered
         """
         stock_list = request.args.getlist('stock')
-        previous_stocks = await StockDb.read_stock()
-
-
         candle_size = request.args.get('candle-size')
         duration = request.args.get('duration')
 
+        previous_stocks = await StockDb.read_stock()
+
         stock_data = []
-
         for stock in stock_list:
-
             historical_data = await cls.get_historical_data_df(candle_size, duration, stock)
             # stock = Stock(**historical_data)
             await StockDb.add_stock(stock.upper())
@@ -67,8 +64,8 @@ class StockManager:
 
         stock_data = {
             "symbol": stock,
-            "labels": data_df.index.tolist(),
-            "closing": data_df['4. close'].tolist(),
+            "date": data_df.index.tolist(),
+            "close": data_df['4. close'].tolist(),
             "min": float(min_close),
             "max": float(max_close),
             "average": float(avg_close),

@@ -113,8 +113,8 @@
             }
         };
         var data = {
-            labels: stock_data[0].labels,
-            series: [stock_data[0].closing]
+            labels: stock_data[0].date,
+            series: [stock_data[0].close]
         };
         new Chartist.Line('.ct-chart', data, options);
 
@@ -125,13 +125,13 @@
         });
 
         var data2 = {
-            labels: stock_data[0].labels,
+            labels: stock_data[0].date,
             series: [x, y, stock_data[0].rsi]
         };
         new Chartist.Line('.ct-chart2', data2, options);
 
         var data3 = {
-            labels: stock_data[0].labels,
+            labels: stock_data[0].date,
             series: [stock_data[0].ma]
         };
         new Chartist.Line('.ct-chart3', data3, options);
