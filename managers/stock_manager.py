@@ -1,12 +1,7 @@
 from managers.api_manager import StockDataApi
-from managers.validator import ValidateData
 from managers.stocks import read_stock, add_stock
-import datetime
-from dateutil.relativedelta import relativedelta
 from sanic_ext import render
 from sanic.response import text
-from utils import break_string
-import pandas as pd
 
 class StockManager:
     @classmethod
@@ -14,20 +9,14 @@ class StockManager:
         """
         Rendering historical data page using the incoming form data
         """
-        if ValidateData.validate_data_historical(request):
-            return await cls.analysis_manager(request, "historical_data.html")
-        else:
-            raise "Invalid data provided"
+        return await cls.analysis_manager(request, "historical_data.html")
 
     @classmethod
     async def compare_data(cls, request):
         """
         Rendering compare data page using the incoming form data
         """
-        if ValidateData.validate_data_compare(request):
-            return await cls.analysis_manager(request, "compare_data.html")
-        else:
-            raise "Invalid data provided"
+        return await cls.analysis_manager(request, "compare_data.html")
 
     @classmethod
     async def real_time_data(cls, request):
@@ -60,11 +49,9 @@ class StockManager:
 
         for stock in stock_list:
 
-            success, historical_data = await cls.get_historical_data_df(candle_size, duration, stock)
-
-            if not success:
-                return text("Something Went Wrong :( \nRefer to the below message\n" + str(historical_data))
-
+            historical_data = await cls.get_historical_data_df(candle_size, duration, stock)
+            # stock = Stock(**historical_data)
+            
             await add_stock(stock)
             stock_data.append(historical_data)
 
@@ -113,7 +100,7 @@ class StockManager:
             "ma": data_df['MA'].tolist(),
             "rsi": data_df['RSI'].tolist()
         }
-        return True, stock_data
+        return stock_data
 
     @classmethod
     async def calculate_rsi(cls, prices, period=14):

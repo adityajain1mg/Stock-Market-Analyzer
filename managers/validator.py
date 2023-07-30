@@ -1,43 +1,67 @@
 from sanic.exceptions import BadRequest
+from functools import wraps
 
 
-class ValidateData:
+def validate_query(func):
+    @wraps(func)
+    async def decorated_function(request, *args, **kwargs):
+        query_args = request.args
+        if query_args is None:
+            raise BadRequest("Missing query parameters")
+        else:
+            stock = query_args.getlist('stock')
+            duration = query_args.get('duration')
+            candle_size = query_args.get('candle-size')
 
-    @classmethod
-    def validate_data_historical(cls, request):
+            if request.path == '/v1/analyse/realtime':
+                if stock is None or len(stock) != 1:
+                    raise BadRequest("Incorrect amount of stock symbol provided")
+                elif duration is not None or candle_size is not None:
+                    raise BadRequest("Invalid data provided")
+            else:
+                if request.path == '/v1/analyse/historical':
+                    if stock is None or len(stock) != 1:
+                        raise BadRequest("Incorrect amount of stock symbol provided")
+                else:
+                    if stock is None or len(stock) != 2:
+                        raise BadRequest("Incorrect amount of stock symbol provided")
+                
+                if duration is None or duration not in ['1D', '1M', '3M', '6M', '1Y']:
+                    raise BadRequest("Duration is either missing or incorrect duration is provided")
+                elif candle_size is None or candle_size not in ['1min', '5min', '15min', '30min', '60min', '1D']:
+                    raise BadRequest("Candle size is either missing or incorrect candle size is provided")   
+        return await func(request, *args, **kwargs)
 
-        if request.args is None or len(request.args) != 3:
-            raise BadRequest("Missing Data")
+    return decorated_function
 
-        stock = request.args.get('stock')
-        if stock is None:
-            raise BadRequest("Missing Stock Data")
 
-        if cls.validate_data(request):
-            return True
-        return False
+# class ValidateData:
 
-    @classmethod
-    def validate_data_compare(cls, request):
-        if request.args is None or len(request.args) != 3:
-            raise BadRequest("Missing Data")
+#     @classmethod
+#     def validate(cls, request):
+#         if request.args is None or len(request.args) != 3:
+#             raise BadRequest("Missing Data")
 
-        stock = request.args.getlist('stock')
-        if stock is None or len(stock) != 2:
-            raise BadRequest("Missing Stock Data")
+#         stock = request.args.getlist('stock')
+#         if request.path == '/v1/analyse/historical':
+#             if stock is None or len(stock) != 1:
+#                 raise BadRequest("Missing Stock Data")
+#         elif request.path == '/v1/analyse/compare':
+#             if stock is None or len(stock) != 2:
+#                 raise BadRequest("Missing Stock Data")
+#         if cls.validate_data(request):
+#             return True
+#         return False
 
-        if cls.validate_data(request):
-            return True
-        return False
+#     @classmethod
+#     def validate_data(cls, request):
+#         duration = request.args.get('duration')
+#         candle_size = request.args.get('candle-size')
 
-    @classmethod
-    def validate_data(cls, request):
-        duration = request.args.get('duration')
-        candle_size = request.args.get('candle-size')
+#         if duration is None or duration not in ['1D', '1M', '3M', '6M', '1Y']:
+#             raise BadRequest("Duration is either missing or incorrect duration is provided")
+#         elif candle_size is None or candle_size not in ['1min', '5min', '15min', '1D', '1M']:
+#             raise BadRequest("Candle size is either missing or incorrect candle size is provided")
 
-        if duration is None or duration not in ['1D', '1M', '3M', '6M', '1Y']:
-            raise BadRequest("Duration is either missing or incorrect duration is provided")
-        elif candle_size is None or candle_size not in ['1min', '5min', '15min', '1D', '1M']:
-            raise BadRequest("Candle size is either missing or incorrect candle size is provided")
+#         return True
 
-        return True

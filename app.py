@@ -1,19 +1,17 @@
 from sanic import Sanic, json
-from sanic.response import text 
-
 from routes.root_group import root_group
-
+from common import help
 app = Sanic("StockAnalyser")
-
+app.config.FALLBACK_ERROR_FORMAT = "json"
 app.blueprint(root_group)
 
 @app.get("/")
-async def hello_world(request):
-    return json({"msg":"Stock Market Analyzer - Aditya Jain"})
+async def get_page(request):
+    return redirect('/help')
 
 @app.get("/help")
-async def help(request):
-    return json({"help": "Help is on the way"})
+async def get_help(request):
+    return json(help)
 
 if __name__ == '__main__':
     app.run()
