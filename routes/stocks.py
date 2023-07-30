@@ -1,38 +1,32 @@
 from sanic import Blueprint, json
 from sanic.response import text
 
-from managers.stocks import read_stock, add_stock, remove_stock
+from decorators.validation_decorator import validate_body
+from managers.stocks import StockDb
 
 stocks = Blueprint('stock_list', version = 1,  url_prefix="/stocks")
 
 @stocks.get("/")
 async def show(request):
-    
     return text("Stocks Blueprint Root")
 
 @stocks.get("/show-list")
 async def show_list(request):
-    rows = await read_stock()
+    rows = await StockDb.read_stock()
     return json({"stock_list": rows})
 
 @stocks.post("/add-stock")
+@validate_body
 async def add_stock(request):
-    body = request.json
-    
-    result = await add_stock(body['stock_name'])
+    body = request.json  
+    result = await StockDb.add_stock(body['stock_name'])
 
-    if result:
-        return text("Success")
-    
-    return text("Failed")
+    return json({"msg": result})
 
 @stocks.post("/remove-stock")
+@validate_body
 async def remove_stock(request):
     body = request.json
+    result = await StockDb.remove_stock(body['stock_name'])
     
-    result = await remove_stock(body['stock_name'])
-    
-    if result:
-        return text("Success")
-    
-    return text("Failed")
+    return json({"msg": result})

@@ -1,5 +1,6 @@
-from sanic.exceptions import BadRequest
 from functools import wraps
+
+from sanic.exceptions import BadRequest
 
 
 def validate_query(func):
@@ -30,6 +31,20 @@ def validate_query(func):
                     raise BadRequest("Duration is either missing or incorrect duration is provided")
                 elif candle_size is None or candle_size not in ['1min', '5min', '15min', '30min', '60min', '1D']:
                     raise BadRequest("Candle size is either missing or incorrect candle size is provided")   
+        return await func(request, *args, **kwargs)
+
+    return decorated_function
+
+def validate_body(func):
+    @wraps(func)
+    async def decorated_function(request, *args, **kwargs):
+        body = request.json
+        if body is None:
+            raise BadRequest("Data not provided")
+        if len(body.keys()) != 1 or body.get('stock_name') is None:
+            raise BadRequest("Invalid data provided")
+        if not isinstance(body.get('stock_name'), str):
+            raise BadRequest("Stock should not be in a list")
         return await func(request, *args, **kwargs)
 
     return decorated_function

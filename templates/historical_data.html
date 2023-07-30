@@ -95,6 +95,10 @@
         <h4>Stock Moving Average</h4>
         <div class="ct-chart3 .ct-perfect-fifth"></div>
     </div>
+    <div class="footer" style="margin-top: 10px;">
+        Previously Analysed Stocks : {% for i in previous_stocks %} <a href="historical?stock={{i}}&duration=1M&candle-size=1min">{{i}}</a>
+        {% endfor %}
+    </div>
     <script>
         var stock_data = document.querySelector('#stock_data_id').value;
         stock_data = stock_data.replace(/'/g, '"');

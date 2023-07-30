@@ -1,33 +1,10 @@
-from managers.api_manager import StockDataApi
-from managers.stocks import read_stock, add_stock
 from sanic_ext import render
-from sanic.response import text
+
+from managers.api_manager import StockDataApi
+from managers.stocks import StockDb
+
 
 class StockManager:
-    @classmethod
-    async def historical_data(cls, request):
-        """
-        Rendering historical data page using the incoming form data
-        """
-        return await cls.analysis_manager(request, "historical_data.html")
-
-    @classmethod
-    async def compare_data(cls, request):
-        """
-        Rendering compare data page using the incoming form data
-        """
-        return await cls.analysis_manager(request, "compare_data.html")
-
-    @classmethod
-    async def real_time_data(cls, request):
-        """
-        Rendering real time data page using the incoming form data
-        """
-        stock = request.args.get('stock')
-        return await render(
-            "real_time_data.html", context={"data": {"stock": stock}}, status=200
-        )
-
     @classmethod
     async def analysis_manager(cls, request, template):
         """It analysis the stock_list to get the data from the api_call
@@ -35,11 +12,10 @@ class StockManager:
 
         Args:
             request (_type_): request from the form
-            stock_list (list): list of stocks 
             template (html): html page to be rendered
         """
         stock_list = request.args.getlist('stock')
-        previous_stocks = await read_stock()
+        previous_stocks = await StockDb.read_stock()
 
 
         candle_size = request.args.get('candle-size')
@@ -51,8 +27,7 @@ class StockManager:
 
             historical_data = await cls.get_historical_data_df(candle_size, duration, stock)
             # stock = Stock(**historical_data)
-            
-            await add_stock(stock)
+            await StockDb.add_stock(stock.upper())
             stock_data.append(historical_data)
 
         return await render(
