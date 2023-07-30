@@ -6,6 +6,7 @@ from sanic.exceptions import BadRequest, NotFound
 # from utils import  break_string
 import datetime
 from dateutil.relativedelta import relativedelta
+import pandas as pd
 
 def break_string(x):
     pattern = r'(\d+)(\D+)'
@@ -73,7 +74,7 @@ class StockDataApi:
             raise BadRequest(e)
 
     @classmethod
-    async def call_alphavantage_intraday_api(cls, symbol, candle_size):
+    async def call_alphavantage_intraday_api(cls, symbol, duration, candle_size):
         print(apis)
         api_name = "alphavantage"
         url = apis[api_name]["url"]
@@ -84,7 +85,8 @@ class StockDataApi:
             "symbol": symbol,
             "datatype":"json",
             "output_size":"compact"}
-        return await cls.call_api("alphavantage", url, headers, querystring)
+        res = await cls.call_api("alphavantage", url, headers, querystring)
+        return await cls.format_alphavantage_data(res, duration)
 
     @classmethod
     async def call_alphavantage_api(cls, symbol, duration, candle_size):
@@ -96,7 +98,8 @@ class StockDataApi:
             "symbol": symbol,
             "outputsize":"compact",
             "datatype":"json"}
-        return await cls.call_api("alphavantage", url, headers, querystring)
+        res = await cls.call_api("alphavantage", url, headers, querystring)
+        return await cls.format_alphavantage_data(res, duration)
 
     @classmethod
     async def call_apistocks_api(cls, symbol, duration, candle_size):
@@ -112,21 +115,54 @@ class StockDataApi:
         headers = apis["apistocks"]["headers"]
         querystring = {
             "symbol": symbol,
-            "dateStart": dateStart.strftime("YYYY-MM-DD"),
-            "dateEnd": dateEnd.strftime("YYYY-MM-DD")}
-        return await cls.call_api("apistocks", url, headers, querystring)
+            "dateStart": dateStart,
+            "dateEnd": dateEnd}
+        res = await cls.call_api("apistocks", url, headers, querystring)
+        return await cls.format_apistocks_data(res)
+        
 
     @classmethod
     async def api_data(cls, symbol, duration, candle_size):
-        # if candle_size in ['1min', '5min', '15min', '30min', '60min']:
-        #     return await cls.call_alphavantage_intraday_api(symbol, candle_size)
-        # response = await cls.auto_select_api(symbol, duration, candle_size)
-        response = await cls.call_alphavantage_api(symbol, duration, candle_size)
+        if candle_size in ['1min', '5min', '15min', '30min', '60min']:
+            return await cls.call_alphavantage_intraday_api(symbol, duration, candle_size)
+        response = await cls.auto_select_api(symbol, duration, candle_size)
         return response
+        # return await cls.call_apistocks_api(symbol, duration, candle_size)
 
     @classmethod
-    async def format_data(cls, res):
-        pass
+    async def format_alphavantage_data(cls, data, duration):
+        second_key = list(data.keys())[1]
+        second_value = data[second_key]
+        second_value = pd.DataFrame(second_value).T
+        second_value['Date'] = second_value.index
+        second_value
+        second_value['4. close'] = second_value['4. close'].astype(float)
+        df = second_value[['Date', '4. close']]
+        df = df[::-1]
+
+        today_date = datetime.datetime.now().date()
+        duration_prefix, duration_suffix = break_string(duration)
+        final_date = today_date
+        if duration_suffix == 'Y':
+            final_date -= relativedelta(years=1)
+        else:
+            final_date -= relativedelta(months=int(duration_prefix))
+        
+        start_date = final_date.strftime('%Y-%m-%d')
+        end_date = today_date.strftime('%Y-%m-%d')
+        df = df.loc[(df.index >= start_date) & (df.index <= end_date)]
+        
+        return df
+
+    @classmethod
+    async def format_apistocks_data(cls, data):
+        second_key = list(data.keys())[1]
+        second_value = data[second_key]
+        second_value = pd.DataFrame(second_value)
+        df = second_value[['Date', 'Close']]
+        df.rename(columns={'Close': '4. close'}, inplace=True)
+        return df
 
 if __name__ == '__main__':
     response = asyncio.run(StockDataApi.api_data('IBM', '1M', '1D'))
+    print(response)

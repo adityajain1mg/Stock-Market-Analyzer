@@ -91,52 +91,14 @@ class StockManager:
         Returns:
             dict: dictionary of data
         """
-        # candle_size_prefix, candle_size_suffix = break_string(candle_size)
 
-        # function_type = period_function_mapping.get(candle_size_suffix, "TIME_SERIES_DAILY")
-        # symbol = stock
-        # interval = candle_size
-        # url = URL.format(function_type, symbol, interval, ALPHA_VANTAGE_API_KEY)
-        # try:
-        #     res = await make_request(url)
-        # except Exception as e:
-        #     return False, str(e)
+        data_df = await StockDataApi.api_data(stock, duration, candle_size)
 
-        res = await StockDataApi.api_data(stock, duration, candle_size)
-        time_series_data = None
-
-        for key in list(res.keys()):
-            if "Time Series" in key:
-                time_series_data = res[key]
-
-        if time_series_data is None:
-            message = str(res)
-            print(message)
-            return False, message
-
-        data = res[list(res.keys())[1]]
-        data_df = pd.DataFrame(data).T
-
-        today_date = datetime.datetime.now().date()
-        duration_prefix, duration_suffix = break_string(duration)
-        final_date = today_date
-        if duration_suffix == 'Y':
-            final_date -= relativedelta(years=1)
-        else:
-            final_date -= relativedelta(months=int(duration_prefix))
-
-        start_date = final_date.strftime('%Y-%m-%d')
-        end_date = today_date.strftime('%Y-%m-%d')
-        data_df['4. close'] = data_df['4. close'].astype(float)
-        data_df = data_df[::-1]
-        # data_df['change'] = data_df['4. close'].pct_change().fillna(0)
-        # data_df.to_csv("historical.csv")
         data_df['MA'] = data_df['4. close'].rolling(window=7, min_periods=1).mean()
         data_df['RSI'] = await cls.calculate_rsi(data_df['4. close'])
         data_df['RSI'] = data_df['RSI'].fillna(0)
         data_df['MA'] = data_df['MA'].fillna(0)
 
-        data_df = data_df.loc[(data_df.index >= start_date) & (data_df.index <= end_date)]
         min_close = data_df['4. close'].min()
         max_close = data_df['4. close'].max()
         avg_close = data_df['4. close'].mean()
