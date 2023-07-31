@@ -6,7 +6,7 @@ from managers.stocks import StockDb
 
 class StockManager:
     @classmethod
-    async def analysis_manager(cls, request, template):
+    async def analysis_manager(cls, Request, template):
         """It analysis the stock_list to get the data from the api_call
         and process that data and display the data inside a rendered html page.
 
@@ -14,9 +14,12 @@ class StockManager:
             request (_type_): request from the form
             template (html): html page to be rendered
         """
-        stock_list = request.args.getlist('stock')
-        candle_size = request.args.get('candle-size')
-        duration = request.args.get('duration')
+        # stock_list = request.args.getlist('stock')
+        # candle_size = request.args.get('candle-size')
+        # duration = request.args.get('duration')
+        stock_list = Request.stock
+        candle_size = Request.candle_size
+        duration = Request.duration
 
         previous_stocks = await StockDb.read_stock()
 
@@ -31,7 +34,6 @@ class StockManager:
             template,
             context={
                 "stock_data": stock_data,
-                "preferences": [candle_size, duration],
                 "previous_stocks": previous_stocks
             },
             status=200

@@ -12,8 +12,8 @@ class Response:
         stock = Request.stock
         if Request.duration is None and Request.candle_size is None:
             return await render(
-                "real_time_data.html", context={"data": {"stock": stock[0]}}, status=200
+                template, context={"data": {"stock": stock[0]}}, status=200
             )
 
-        return await StockManager(Request, template)
+        return await StockManager.analysis_manager(Request, template)
 

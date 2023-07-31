@@ -1,6 +1,6 @@
 import asyncio
 import datetime
-
+# import requests
 import pandas as pd
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 from dateutil.relativedelta import relativedelta
@@ -9,7 +9,6 @@ from sanic.log import logger
 
 from common import api_list, api_stats, apis
 from utils import break_string
-
 
 class StockDataApi:
     @classmethod
@@ -22,14 +21,30 @@ class StockDataApi:
                     logger.info("Cache is being used")
                 else:
                     logger.info("Data is saved in cache")
+
                 res = await response.json()
-                if response.status == 200 and len(res.keys()) != 1:
-                    api_stats[api]["success"] += 1
-                    
-                    return res
-                else:
-                    api_stats[api]["failure"] += 1
+                
+                if response.status != 200 and len(res.keys()) == 1:
                     raise BadRequest(res)
+                else: 
+                    second_key = list(res.keys())[1]
+                    second_value = res[second_key]
+                    if len(second_value) == 0:
+                        raise NotFound("Data is not available in the server")
+
+                api_stats[api]["success"] += 1
+                return second_value
+
+        # try: 
+        #     res = requests.get(url, headers=headers, params=querystring)
+        #     res = res.json()
+        #     if len(res.keys()) == 1:
+        #         raise BadRequest(res)
+        #     api_stats[api]["success"] += 1
+        #     return res
+        # except:
+        #     api_stats[api]["failure"] += 1
+        #     raise BadRequest(res)
 
     @classmethod
     async def call_alphavantage_intraday_api(cls, symbol, duration, candle_size):
@@ -76,8 +91,9 @@ class StockDataApi:
         headers = apis["apistocks"]["headers"]
         querystring = {
             "symbol": symbol,
-            "dateStart": dateStart,
-            "dateEnd": dateEnd}
+            "dateStart": dateStart.strftime("%Y-%m-%d"),
+            "dateEnd": dateEnd.strftime("%Y-%m-%d")}
+        logger.info(querystring)
         res = await cls.call_api("apistocks", url, headers, querystring)
         return await cls.format_apistocks_data(res)
         
@@ -109,6 +125,7 @@ class StockDataApi:
     @classmethod
     async def api_data(cls, symbol, duration, candle_size):
         """Calling auto_select_api method to get data"""
+        symbol = symbol.upper()
         if candle_size in ['1min', '5min', '15min', '30min', '60min']:
             return await cls.call_alphavantage_intraday_api(symbol, duration, candle_size)
         response = await cls.auto_select_api(symbol, duration, candle_size)
@@ -116,10 +133,9 @@ class StockDataApi:
         # return await cls.call_apistocks_api(symbol, duration, candle_size)
 
     @classmethod
-    async def format_alphavantage_data(cls, data, duration):
+    async def format_alphavantage_data(cls, second_value, duration):
         """formatting alphavantage api data"""
-        second_key = list(data.keys())[1]
-        second_value = pd.DataFrame(data[second_key]).T
+        second_value = pd.DataFrame(second_value).T
         second_value['Date'] = second_value.index
         second_value['4. close'] = second_value['4. close'].astype(float)
         df = second_value[['Date', '4. close']]
@@ -140,15 +156,13 @@ class StockDataApi:
         return df
 
     @classmethod
-    async def format_apistocks_data(cls, data):
+    async def format_apistocks_data(cls, second_value):
         """Formatting apistocks data"""
-        second_key = list(data.keys())[1]
-        second_value = data[second_key]
         second_value = pd.DataFrame(second_value)
         df = second_value[['Date', 'Close']]
         df.rename(columns={'Close': '4. close'}, inplace=True)
         return df
 
 if __name__ == '__main__':
-    response = asyncio.run(StockDataApi.api_data('IBM', '1M', '1D'))
+    response = asyncio.run(StockDataApi.call_apistocks_api('IBM', '1M', '1D'))
     logger.info(response)

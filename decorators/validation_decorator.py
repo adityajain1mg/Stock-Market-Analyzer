@@ -12,7 +12,7 @@ def validate_query(func):
         else:
             stock = query_args.getlist('stock')
             duration = query_args.get('duration')
-            candle_size = query_args.get('candle-size')
+            candle_size = query_args.get('candle_size')
 
             if request.path == '/v1/analyse/realtime':
                 if stock is None or len(stock) != 1:
