@@ -2,11 +2,12 @@ from sanic_ext import render
 
 from managers.api_manager import StockDataApi
 from managers.stocks import StockDb
+from models.response import Response
 
 
 class StockManager:
     @classmethod
-    async def analysis_manager(cls, Request, template):
+    async def analysis(cls, Request, template):
         """It analysis the stock_list to get the data from the api_call
         and process that data and display the data inside a rendered html page.
 
@@ -14,9 +15,6 @@ class StockManager:
             request (_type_): request from the form
             template (html): html page to be rendered
         """
-        # stock_list = request.args.getlist('stock')
-        # candle_size = request.args.get('candle-size')
-        # duration = request.args.get('duration')
         stock_list = Request.stock
         candle_size = Request.candle_size
         duration = Request.duration
@@ -29,14 +27,19 @@ class StockManager:
             # stock = Stock(**historical_data)
             await StockDb.add_stock(stock.upper())
             stock_data.append(historical_data)
-
-        return await render(
-            template,
-            context={
+        response_dict = {
+            "template": template, 
+            "context": {
                 "stock_data": stock_data,
                 "previous_stocks": previous_stocks
             },
-            status=200
+            "status": 200
+        }
+        responseObject = Response(**response_dict)
+        return await render(
+            responseObject.template,
+            context=responseObject.context,
+            status=responseObject.status
         )
 
     @classmethod
@@ -95,3 +98,5 @@ class StockManager:
         rs = avg_gains / avg_losses
         rsi = 100 - (100 / (1 + rs))
         return rsi
+
+

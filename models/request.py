@@ -5,8 +5,8 @@ from pydantic import validator
 
 class Request(BaseModel):
     stock: list
-    duration: str=None
-    candle_size: str=None
+    duration: str
+    candle_size: str
 
     @validator('duration', 'candle_size', pre=True)
     def convert_to_single_value(cls, value):
