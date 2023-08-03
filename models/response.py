@@ -2,6 +2,6 @@
 from pydantic import BaseModel
 
 class Response(BaseModel):
-    template: str
-    context: dict
-    status: int
+    data: dict
+    status_code: int
+    message: str

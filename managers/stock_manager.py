@@ -28,22 +28,27 @@ class StockManager:
             await StockDb.add_stock(stock.upper())
             stock_data.append(historical_data)
         response_dict = {
-            "template": template, 
-            "context": {
-                "stock_data": stock_data,
-                "previous_stocks": previous_stocks
+            "data":{
+                "template": template, 
+                "context": {
+                    "stock_data": stock_data,
+                    "previous_stocks": previous_stocks
+                }
             },
-            "status": 200
+            "status_code":200,
+            "message" : "Data is provided"
         }
+
         responseObject = Response(**response_dict)
+
         return await render(
-            responseObject.template,
-            context=responseObject.context,
-            status=responseObject.status
+            responseObject.data["template"],
+            context=responseObject.data["context"],
+            status=responseObject.status_code
         )
 
     @classmethod
-    async def get_historical_data_df(cls, candle_size, duration, stock):
+    async def _get_historical_data_df(cls, candle_size, duration, stock):
         """ 
         Calculate Avg, Max, Min, Moving Average, RSI form the api call data.
 
@@ -80,7 +85,7 @@ class StockManager:
         return stock_data
 
     @classmethod
-    async def calculate_rsi(cls, prices, period=14):
+    async def _calculate_rsi(cls, prices, period=14):
         """Calculate RSI using api-call data
 
         Args:

@@ -12,42 +12,37 @@ from utils import break_string
 
 class StockDataApi:
     @classmethod
-    async def call_api(cls, api, url, headers, querystring):
+    async def _call_api(cls, api, url, headers, querystring):
         """calling third party apis and caching there response and raising exception
         """
-        async with CachedSession(cache=SQLiteBackend('api_cache')) as session:
-            async with session.get(url, headers=headers, params=querystring, ssl=False) as response:
-                if response.from_cache: 
-                    logger.info("Cache is being used")
-                else:
-                    logger.info("Data is saved in cache")
+        try:
+            async with CachedSession(cache=SQLiteBackend('api_cache')) as session:
+                async with session.get(url, headers=headers, params=querystring, ssl=False) as response:
+                    if response.from_cache: 
+                        logger.info("Cache is being used")
+                    else:
+                        logger.info("Data is saved in cache")
 
-                res = await response.json()
-                
-                if response.status != 200 and len(res.keys()) == 1:
-                    raise BadRequest(res)
-                else: 
-                    second_key = list(res.keys())[1]
-                    second_value = res[second_key]
-                    if len(second_value) == 0:
-                        raise NotFound("Data is not available in the server")
+                    res = await response.json()
+                    
+                    if response.status != 200 and len(res.keys()) == 1:
+                        raise BadRequest(res)
+                    else: 
+                        second_key = list(res.keys())[1]
+                        second_value = res[second_key]
+                        if len(second_value) == 0:
+                            raise NotFound("Data is not available in the server")
 
-                api_stats[api]["success"] += 1
-                return second_value
+                    api_stats[api]["success"] += 1
 
-        # try: 
-        #     res = requests.get(url, headers=headers, params=querystring)
-        #     res = res.json()
-        #     if len(res.keys()) == 1:
-        #         raise BadRequest(res)
-        #     api_stats[api]["success"] += 1
-        #     return res
-        # except:
-        #     api_stats[api]["failure"] += 1
-        #     raise BadRequest(res)
+                    logger.info(api_stats)
+                    return second_value
+        except TimeoutError:
+            raise TimeoutError("Api call have exceeded the timeout limit")
+       
 
     @classmethod
-    async def call_alphavantage_intraday_api(cls, symbol, duration, candle_size):
+    async def _call_alphavantage_intraday_api(cls, symbol, duration, candle_size):
         """calling third party api to get intraday data
         """
         api_name = "alphavantage"
@@ -63,7 +58,7 @@ class StockDataApi:
         return await cls.format_alphavantage_data(res, duration)
 
     @classmethod
-    async def call_alphavantage_api(cls, symbol, duration, candle_size):
+    async def _call_alphavantage_api(cls, symbol, duration, candle_size):
         """Calling third party api to get data"""
         url = apis["alphavantage"]["url"]
         headers = apis["alphavantage"]["headers"]
@@ -77,7 +72,7 @@ class StockDataApi:
         return await cls.format_alphavantage_data(res, duration)
 
     @classmethod
-    async def call_apistocks_api(cls, symbol, duration, candle_size):
+    async def _call_apistocks_api(cls, symbol, duration, candle_size):
         """Calling third party api to get data"""
         dateEnd = datetime.datetime.now().date()
         duration_prefix, duration_suffix = break_string(duration)
@@ -98,10 +93,11 @@ class StockDataApi:
         return await cls.format_apistocks_data(res)
         
     @classmethod
-    async def auto_select_api(cls, symbol, duration, candle_size):
+    async def _auto_select_api(cls, symbol, duration, candle_size):
         """calling all the apis to get success rate of every api and then selecting
         maximum success rate api to get data
         """
+        #add a time farme for success and failure and store in db
         tasks = []
         for api in api_list:
             method = f'call_{api}_api'
@@ -133,7 +129,7 @@ class StockDataApi:
         # return await cls.call_apistocks_api(symbol, duration, candle_size)
 
     @classmethod
-    async def format_alphavantage_data(cls, second_value, duration):
+    async def _format_alphavantage_data(cls, second_value, duration):
         """formatting alphavantage api data"""
         second_value = pd.DataFrame(second_value).T
         second_value['Date'] = second_value.index
@@ -156,7 +152,7 @@ class StockDataApi:
         return df
 
     @classmethod
-    async def format_apistocks_data(cls, second_value):
+    async def _format_apistocks_data(cls, second_value):
         """Formatting apistocks data"""
         second_value = pd.DataFrame(second_value)
         df = second_value[['Date', 'Close']]

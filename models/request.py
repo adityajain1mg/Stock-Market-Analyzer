@@ -1,6 +1,7 @@
 from attr import validate
 from pydantic import BaseModel
 from pydantic import validator
+from typing import Literal
 
 
 class Request(BaseModel):

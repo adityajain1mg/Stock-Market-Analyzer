@@ -1,14 +1,13 @@
 from sanic import Blueprint, json
 from sanic.response import text
-
-from managers.validate_manager import ValidateData
+from decorators.validate_decorator import validate_body
 from managers.stocks import StockDb
 
 stocks = Blueprint('stock_list', version = 1,  url_prefix="/stocks")
 
 @stocks.get("/")
 async def show(request):
-    return text("Stocks Blueprint Root")
+    return json({"msg": "Stocks Blueprint Root"})
 
 @stocks.get("/show-list")
 async def show_list(request):
@@ -17,16 +16,16 @@ async def show_list(request):
     return json({"stock_list": rows})
 
 @stocks.post("/add-stock")
+@validate_body
 async def add_stock(request):
-    ValidateData.validate_body(request)
     body = request.json  
     result = await StockDb.add_stock(body['stock_name'])
 
     return json({"msg": result})
 
 @stocks.post("/remove-stock")
+@validate_body
 async def remove_stock(request):
-    ValidateData.validate_body(request)
     body = request.json
     result = await StockDb.remove_stock(body['stock_name'])
     
