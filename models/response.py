@@ -1,19 +1,7 @@
-from dataclasses import dataclass
-from sanic_ext import render
-from managers.stock_manager import StockManager
-@dataclass
-class Response:
-    html: str
-    context: dict
-    status: int
 
-    @classmethod
-    async def get_response(cls, Request, template):
-        stock = Request.stock
-        if Request.duration is None and Request.candle_size is None:
-            return await render(
-                "real_time_data.html", context={"data": {"stock": stock[0]}}, status=200
-            )
+from pydantic import BaseModel
 
-        return await StockManager(Request, template)
-
+class Response(BaseModel):
+    data: dict
+    status_code: int
+    message: str

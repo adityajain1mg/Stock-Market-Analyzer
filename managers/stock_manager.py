@@ -2,11 +2,12 @@ from sanic_ext import render
 
 from managers.api_manager import StockDataApi
 from managers.stocks import StockDb
+from models.response import Response
 
 
 class StockManager:
     @classmethod
-    async def analysis_manager(cls, request, template):
+    async def analysis(cls, Request, template):
         """It analysis the stock_list to get the data from the api_call
         and process that data and display the data inside a rendered html page.
 
@@ -14,9 +15,9 @@ class StockManager:
             request (_type_): request from the form
             template (html): html page to be rendered
         """
-        stock_list = request.args.getlist('stock')
-        candle_size = request.args.get('candle-size')
-        duration = request.args.get('duration')
+        stock_list = Request.stock
+        candle_size = Request.candle_size
+        duration = Request.duration
 
         previous_stocks = await StockDb.read_stock()
 
@@ -26,19 +27,28 @@ class StockManager:
             # stock = Stock(**historical_data)
             await StockDb.add_stock(stock.upper())
             stock_data.append(historical_data)
+        response_dict = {
+            "data":{
+                "template": template, 
+                "context": {
+                    "stock_data": stock_data,
+                    "previous_stocks": previous_stocks
+                }
+            },
+            "status_code":200,
+            "message" : "Data is provided"
+        }
+
+        responseObject = Response(**response_dict)
 
         return await render(
-            template,
-            context={
-                "stock_data": stock_data,
-                "preferences": [candle_size, duration],
-                "previous_stocks": previous_stocks
-            },
-            status=200
+            responseObject.data["template"],
+            context=responseObject.data["context"],
+            status=responseObject.status_code
         )
 
     @classmethod
-    async def get_historical_data_df(cls, candle_size, duration, stock):
+    async def _get_historical_data_df(cls, candle_size, duration, stock):
         """ 
         Calculate Avg, Max, Min, Moving Average, RSI form the api call data.
 
@@ -75,7 +85,7 @@ class StockManager:
         return stock_data
 
     @classmethod
-    async def calculate_rsi(cls, prices, period=14):
+    async def _calculate_rsi(cls, prices, period=14):
         """Calculate RSI using api-call data
 
         Args:
@@ -93,3 +103,5 @@ class StockManager:
         rs = avg_gains / avg_losses
         rsi = 100 - (100 / (1 + rs))
         return rsi
+
+

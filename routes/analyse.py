@@ -1,29 +1,31 @@
-from sanic import Blueprint, json
-from sanic.response import text
+from sanic import Blueprint
 from sanic_ext import render
-
-from decorators.validation_decorator import validate_query
+from decorators.validate_decorator import validate, validate_realtime
+from models.request import Request
 from managers.stock_manager import StockManager
-
 analyse = Blueprint('analyse', version=1, url_prefix="/analyse")
 
 
 @analyse.get("/historical")
-@validate_query
+@validate(stock_count=1)
 async def get_historical(request):
-    return await StockManager.analysis_manager(request, "historical_data.html")
+    args = request.args
+    requestObject = Request(**args)
+    return await StockManager.analysis(requestObject, "historical_data.html")
 
 
 @analyse.get("/compare")
-@validate_query
+@validate(stock_count=2)
 async def get_compare(request):
-    return await StockManager.analysis_manager(request, "compare_data.html")
+    args = request.args
+    requestObject = Request(**args)
+    return await StockManager.analysis(requestObject, "compare_data.html")
 
 
 @analyse.get("/realtime")
-@validate_query
+@validate_realtime
 async def get_realtime(request):
     stock = request.args.get('stock')
     return await render(
-        "real_time_data.html", context={"data": {"stock": stock}}, status=200
-    )
+                "real_time_data.html", context={"data": {"stock": stock}}, status=200
+            )

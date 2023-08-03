@@ -1,17 +1,17 @@
 from sanic import Blueprint, json
 from sanic.response import text
-
-from decorators.validation_decorator import validate_body
+from decorators.validate_decorator import validate_body
 from managers.stocks import StockDb
 
 stocks = Blueprint('stock_list', version = 1,  url_prefix="/stocks")
 
 @stocks.get("/")
 async def show(request):
-    return text("Stocks Blueprint Root")
+    return json({"msg": "Stocks Blueprint Root"})
 
 @stocks.get("/show-list")
 async def show_list(request):
+
     rows = await StockDb.read_stock()
     return json({"stock_list": rows})
 
