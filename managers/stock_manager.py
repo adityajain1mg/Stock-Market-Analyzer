@@ -23,7 +23,7 @@ class StockManager:
 
         stock_data = []
         for stock in stock_list:
-            historical_data = await cls.get_historical_data_df(candle_size, duration, stock)
+            historical_data = await cls._get_historical_data_df(candle_size, duration, stock)
             # stock = Stock(**historical_data)
             await StockDb.add_stock(stock.upper())
             stock_data.append(historical_data)
@@ -64,7 +64,7 @@ class StockManager:
         data_df = await StockDataApi.api_data(stock, duration, candle_size)
 
         data_df['MA'] = data_df['4. close'].rolling(window=7, min_periods=1).mean()
-        data_df['RSI'] = await cls.calculate_rsi(data_df['4. close'])
+        data_df['RSI'] = await cls._calculate_rsi(data_df['4. close'])
         data_df['RSI'] = data_df['RSI'].fillna(0)
         data_df['MA'] = data_df['MA'].fillna(0)
 

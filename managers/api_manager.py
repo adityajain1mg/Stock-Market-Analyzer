@@ -54,8 +54,8 @@ class StockDataApi:
             "symbol": symbol,
             "datatype":"json",
             "output_size":"full"}
-        res = await cls.call_api("alphavantage", url, headers, querystring)
-        return await cls.format_alphavantage_data(res, duration)
+        res = await cls._call_api("alphavantage", url, headers, querystring)
+        return await cls._format_alphavantage_data(res, duration)
 
     @classmethod
     async def _call_alphavantage_api(cls, symbol, duration, candle_size):
@@ -68,8 +68,8 @@ class StockDataApi:
             "symbol": symbol,
             "outputsize":"full",
             "datatype":"json"}
-        res = await cls.call_api("alphavantage", url, headers, querystring)
-        return await cls.format_alphavantage_data(res, duration)
+        res = await cls._call_api("alphavantage", url, headers, querystring)
+        return await cls._format_alphavantage_data(res, duration)
 
     @classmethod
     async def _call_apistocks_api(cls, symbol, duration, candle_size):
@@ -89,8 +89,8 @@ class StockDataApi:
             "dateStart": dateStart.strftime("%Y-%m-%d"),
             "dateEnd": dateEnd.strftime("%Y-%m-%d")}
         logger.info(querystring)
-        res = await cls.call_api("apistocks", url, headers, querystring)
-        return await cls.format_apistocks_data(res)
+        res = await cls._call_api("apistocks", url, headers, querystring)
+        return await cls._format_apistocks_data(res)
         
     @classmethod
     async def _auto_select_api(cls, symbol, duration, candle_size):
@@ -100,7 +100,7 @@ class StockDataApi:
         #add a time farme for success and failure and store in db
         tasks = []
         for api in api_list:
-            method = f'call_{api}_api'
+            method = f'_call_{api}_api'
             if hasattr(cls, method):
                 method_name = getattr(cls, method)
                 tasks.append(method_name(symbol, duration, candle_size))
@@ -113,7 +113,7 @@ class StockDataApi:
             for api in apis}
         max_rate_api = max(success_rates, key=success_rates.get)
 
-        method = f'call_{max_rate_api}_api'
+        method = f'_call_{max_rate_api}_api'
         method_name = getattr(cls, method)
         data = await method_name(symbol, duration, candle_size)
         return data
@@ -123,8 +123,8 @@ class StockDataApi:
         """Calling auto_select_api method to get data"""
         symbol = symbol.upper()
         if candle_size in ['1min', '5min', '15min', '30min', '60min']:
-            return await cls.call_alphavantage_intraday_api(symbol, duration, candle_size)
-        response = await cls.auto_select_api(symbol, duration, candle_size)
+            return await cls._call_alphavantage_intraday_api(symbol, duration, candle_size)
+        response = await cls._auto_select_api(symbol, duration, candle_size)
         return response
         # return await cls.call_apistocks_api(symbol, duration, candle_size)
 
