@@ -1,16 +1,20 @@
 import asyncio
 import datetime
-# import requests
 import pandas as pd
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 from dateutil.relativedelta import relativedelta
-from sanic.exceptions import BadRequest, NotFound
+from sanic.exceptions import BadRequest
 from sanic.log import logger
-
-from common import api_list, api_stats, apis
 from utils import break_string
+from models.recommendation import Recommendation
+from models.data import SaveResponse
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class StockDataApi:
+
     @classmethod
     async def _call_api(cls, api, url, headers, querystring):
         """calling third party apis and caching there response and raising exception
@@ -25,29 +29,25 @@ class StockDataApi:
 
                     res = await response.json()
                     
-                    if response.status != 200 and len(res.keys()) == 1:
+                    if response.status != 200 or len(res.keys()) == 1 or len(res[list(res.keys())[1]]) == 0 :
+                        await SaveResponse.save_request(api, 0)
                         raise BadRequest(res)
-                    else: 
-                        second_key = list(res.keys())[1]
-                        second_value = res[second_key]
-                        if len(second_value) == 0:
-                            raise NotFound("Data is not available in the server")
-
-                    api_stats[api]["success"] += 1
-
-                    logger.info(api_stats)
-                    return second_value
+                        
+                    await SaveResponse.save_request(api, 1)
+                    return res[list(res.keys())[1]]
         except TimeoutError:
             raise TimeoutError("Api call have exceeded the timeout limit")
        
-
     @classmethod
     async def _call_alphavantage_intraday_api(cls, symbol, duration, candle_size):
         """calling third party api to get intraday data
         """
         api_name = "alphavantage"
-        url = apis[api_name]["url"]
-        headers = apis["alphavantage"]["headers"]
+        url = os.getenv('aplhavantage_url')
+        headers = {
+                    "X-RapidAPI-Key": os.getenv('x_rapidapi_key'),
+                    "X-RapidAPI-Host": os.getenv('alphavantage_host')
+                }
         querystring = {
             "interval": candle_size,
             "function": "TIME_SERIES_INTRADAY",
@@ -60,9 +60,11 @@ class StockDataApi:
     @classmethod
     async def _call_alphavantage_api(cls, symbol, duration, candle_size):
         """Calling third party api to get data"""
-        url = apis["alphavantage"]["url"]
-        headers = apis["alphavantage"]["headers"]
-
+        url = os.getenv('aplhavantage_url')
+        headers = {
+                    "X-RapidAPI-Key": os.getenv('x_rapidapi_key'),
+                    "X-RapidAPI-Host": os.getenv('alphavantage_host')
+                }
         querystring = {
             "function":"TIME_SERIES_DAILY",
             "symbol": symbol,
@@ -82,8 +84,11 @@ class StockDataApi:
         else:
             dateStart -= relativedelta(months=int(duration_prefix))
 
-        url = apis["apistocks"]["url"]
-        headers = apis["apistocks"]["headers"]
+        url = os.getenv('apistocks_url')
+        headers = {
+                    "X-RapidAPI-Key": os.getenv('x_rapidapi_key'),
+                    "X-RapidAPI-Host": os.getenv('apistocks_host')
+                }
         querystring = {
             "symbol": symbol,
             "dateStart": dateStart.strftime("%Y-%m-%d"),
@@ -97,22 +102,9 @@ class StockDataApi:
         """calling all the apis to get success rate of every api and then selecting
         maximum success rate api to get data
         """
-        #add a time farme for success and failure and store in db
-        tasks = []
-        for api in api_list:
-            method = f'_call_{api}_api'
-            if hasattr(cls, method):
-                method_name = getattr(cls, method)
-                tasks.append(method_name(symbol, duration, candle_size))
-            else: 
-                raise NotFound(f'method {method} not found')
-
-        results = await asyncio.gather(*tasks)
-        success_rates = {
-            api: api_stats[api]['success'] / (api_stats[api]['success'] + api_stats[api]['failure'])
-            for api in apis}
-        max_rate_api = max(success_rates, key=success_rates.get)
-
+        r = await Recommendation.highest_success_api()
+        logger.info(r)
+        max_rate_api = r.get('api')
         method = f'_call_{max_rate_api}_api'
         method_name = getattr(cls, method)
         data = await method_name(symbol, duration, candle_size)
@@ -126,7 +118,6 @@ class StockDataApi:
             return await cls._call_alphavantage_intraday_api(symbol, duration, candle_size)
         response = await cls._auto_select_api(symbol, duration, candle_size)
         return response
-        # return await cls.call_apistocks_api(symbol, duration, candle_size)
 
     @classmethod
     async def _format_alphavantage_data(cls, second_value, duration):

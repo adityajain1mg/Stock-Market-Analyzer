@@ -24,24 +24,3 @@ help = {
         "1D": "use this to get 1 day interval data"
     }
 }
-
-api_list = ["alphavantage", "apistocks"]
-
-apis = {
-            "alphavantage":{
-                "url": "https://alpha-vantage.p.rapidapi.com/query",
-                "headers": {
-                    "X-RapidAPI-Key": "7b0d7ffcf5msh2c3d7f26e39db7dp11f4bcjsna643d971a75c",
-                    "X-RapidAPI-Host": "alpha-vantage.p.rapidapi.com"
-                }
-            },
-            "apistocks": {
-                "url": "https://apistocks.p.rapidapi.com/daily",
-                "headers": {
-                    "X-RapidAPI-Key": "7b0d7ffcf5msh2c3d7f26e39db7dp11f4bcjsna643d971a75c",
-                    "X-RapidAPI-Host": "apistocks.p.rapidapi.com"
-                }
-            }
-        }
-
-api_stats = {api: {'success': 0, 'failure': 0} for api in api_list}

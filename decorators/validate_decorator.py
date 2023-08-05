@@ -28,7 +28,6 @@ def validate_realtime(func):
 
     return decorated_function
 
-
 def validate_body(func):
     @wraps(func)
     async def decorated_function(request, *args, **kwargs):
