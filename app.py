@@ -14,6 +14,10 @@ app.blueprint(root_group)
 async def setup(app, loop):
     await CreateDB.init()
 
+@app.before_server_stop
+async def close_setup():
+    await CreateDB.close()
+
 @app.get("/")
 async def get_page(request):
     return redirect('/help')

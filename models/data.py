@@ -12,7 +12,7 @@ class SaveResponse:
         request = ApiResponse(
             api = api,
             successful_hits=successful_hits,
-            timestamp=timestamp
+            hit_time=timestamp
         )
         await request.save()
         logger.info("Successful")
